@@ -89,6 +89,8 @@ public final class AndroidRefWatcherBuilder extends RefWatcherBuilder<AndroidRef
     RefWatcher refWatcher = build();
     if (refWatcher != DISABLED) {
       LeakCanaryInternals.setEnabledAsync(context, DisplayLeakActivity.class, true);
+      // WB_ANDROID: 2018/12/7 11:13 AM Leak Canary 的入口, 观察Activity引用, 把 Activity 的引用
+      //存放到一个弱引用队列中, 触发 GC 后, 查看是否
       if (watchActivities) {
         ActivityRefWatcher.install(context, refWatcher);
       }

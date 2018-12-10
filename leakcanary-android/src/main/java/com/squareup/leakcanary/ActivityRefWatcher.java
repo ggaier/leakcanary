@@ -44,7 +44,10 @@ public final class ActivityRefWatcher {
 
   private final Application.ActivityLifecycleCallbacks lifecycleCallbacks =
       new ActivityLifecycleCallbacksAdapter() {
-        @Override public void onActivityDestroyed(Activity activity) {
+        @Override
+        public void onActivityDestroyed(Activity activity) {
+          // WB_ANDROID: 2018/12/7
+          // 当 Activity 销毁的时候, 会自动的 Watch Activity.
           refWatcher.watch(activity);
         }
       };

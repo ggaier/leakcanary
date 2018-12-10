@@ -101,7 +101,7 @@ public final class LeakCanaryInternals {
       return false;
     }
     String mainProcess = packageInfo.applicationInfo.processName;
-
+    //通常是用来获取属于自己应用的 Component
     ComponentName component = new ComponentName(context, serviceClass);
     ServiceInfo serviceInfo;
     try {
@@ -129,6 +129,7 @@ public final class LeakCanaryInternals {
       CanaryLog.d("Could not get running app processes %d", exception);
       return false;
     }
+    //pid 是唯一的, 每个进程都单独存在的
     if (runningProcesses != null) {
       for (ActivityManager.RunningAppProcessInfo process : runningProcesses) {
         if (process.pid == myPid) {

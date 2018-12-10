@@ -63,13 +63,19 @@ public final class AndroidWatchExecutor implements WatchExecutor {
   }
 
   private void waitForIdle(final Retryable retryable, final int failedAttempts) {
+    // WB_ANDROID: 2018/12/7
     // This needs to be called from the main thread.
-    Looper.myQueue().addIdleHandler(new MessageQueue.IdleHandler() {
-      @Override public boolean queueIdle() {
-        postToBackgroundWithDelay(retryable, failedAttempts);
-        return false;
-      }
-    });
+    Looper.myQueue()
+        .addIdleHandler(
+            new MessageQueue.IdleHandler() {
+              @Override
+              public boolean queueIdle() {
+                //当MessageQueue 中的没有消息被处理的时候, 会调用该方法.
+                //nativePollOnce() 会根据 CPU 的周期定期查看是否有新消息到来.
+                postToBackgroundWithDelay(retryable, failedAttempts);
+                return false;
+              }
+            });
   }
 
   private void postToBackgroundWithDelay(final Retryable retryable, final int failedAttempts) {

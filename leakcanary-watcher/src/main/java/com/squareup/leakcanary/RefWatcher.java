@@ -45,6 +45,7 @@ public final class RefWatcher {
   private final HeapDump.Listener heapdumpListener;
   private final HeapDump.Builder heapDumpBuilder;
   private final Set<String> retainedKeys;
+  //引用被注册的队列.
   private final ReferenceQueue<Object> queue;
 
   RefWatcher(WatchExecutor watchExecutor, DebuggerControl debuggerControl, GcTrigger gcTrigger,
@@ -84,6 +85,7 @@ public final class RefWatcher {
     final long watchStartNanoTime = System.nanoTime();
     String key = UUID.randomUUID().toString();
     retainedKeys.add(key);
+
     final KeyedWeakReference reference =
         new KeyedWeakReference(watchedReference, key, referenceName, queue);
 
@@ -119,8 +121,10 @@ public final class RefWatcher {
     });
   }
 
+
   @SuppressWarnings("ReferenceEquality") // Explicitly checking for named null.
   Retryable.Result ensureGone(final KeyedWeakReference reference, final long watchStartNanoTime) {
+    // WB_ANDROID: 2018/12/7 10:40 AM 触发 GC, 查看是否产生泄露的开始
     long gcStartNanoTime = System.nanoTime();
     long watchDurationMs = NANOSECONDS.toMillis(gcStartNanoTime - watchStartNanoTime);
 
@@ -133,6 +137,7 @@ public final class RefWatcher {
     if (gone(reference)) {
       return DONE;
     }
+    //触发 GC 后, 然后 GC 会把引用都存放到队列中, 之后移除WeakReference.
     gcTrigger.runGc();
     removeWeaklyReachableReferences();
     if (!gone(reference)) {
@@ -165,6 +170,9 @@ public final class RefWatcher {
   private void removeWeaklyReachableReferences() {
     // WeakReferences are enqueued as soon as the object to which they point to becomes weakly
     // reachable. This is before finalization or garbage collection has actually happened.
+    // WB_ANDROID: 2018/12/7 11:30 AM ReferenceQueue 是 java 提供的用来记录可以被 GC 的对象的.
+    // 当非强引用的对象可以被 GC 回收的时候, 就会在queue 里存放该引用. 然后根据该引用的 key, 移除掉可以被回收的
+    // 对象, 剩下的就是不可被回收的对象了.
     KeyedWeakReference ref;
     while ((ref = (KeyedWeakReference) queue.poll()) != null) {
       retainedKeys.remove(ref.key);
